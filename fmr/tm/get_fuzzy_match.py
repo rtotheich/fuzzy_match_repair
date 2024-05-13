@@ -1,0 +1,35 @@
+#!/usr/bin/env python
+# SBATCH --time=1409
+
+# Program to get the fuzzy match score
+# for each translation unit (TU) in the
+# source segments. Prints a tab-separated
+# CSV with segment, closest fuzzy match,
+# percentage, missing part to stdout
+
+import sys
+from thefuzz import fuzz
+FILE = sys.argv[1]
+
+def get_line(seg1, i, lines):
+    best = 0
+    best_seg = ''
+    for seg2 in enumerate(lines):
+        if seg2[0] != i:
+            current_ratio = fuzz.ratio(seg1, seg2[1])
+            if current_ratio > best:
+                best = current_ratio
+                best_seg = seg2[1]
+    return f"{seg1}\t{best_seg}\t{best}"
+
+def main():
+    sys.stdout.write("segment\tclosest\tfuzzy_score\tdifference\n")
+    with open(FILE, 'r', encoding='utf-8') as fd:
+        lines = [line.strip('\n') for line in fd.readlines()]
+    for line in enumerate(lines):
+        line_to_write = get_line(line[1].strip('\n'), line[0], lines)
+        if int(line_to_write.split('\t')[2]) >= 60:
+            sys.stdout.write(line_to_write + '\n')
+
+if __name__ == "__main__":
+    main()
